@@ -31,58 +31,67 @@ class ItsMyBikeDevice extends IPSModule
         $this->SetStatus(102); // Aktiv
     }
 
-    public function Update()
-    {
-        $this->LogMessage(
-            "IMBD Update called, Serial=" . $this->ReadPropertyString("SerialNumber"),
-            KL_MESSAGE
-        );
-        $this->LogMessage(
-            "IMBD Devices dump: " . json_encode($devices),
-            KL_MESSAGE
-        );
-        
-        if (!$this->HasActiveParent()) {
-            return;
-        }
+public function Update()
+{
+    $this->LogMessage("IMBD Update entered", KL_MESSAGE);
 
-        $serial = trim($this->ReadPropertyString("SerialNumber"));
-        if ($serial === "") {
-            return;
-        }
-
-        $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
-        if ($ioID <= 0) {
-            return;
-        }
-
-        $devices = @IPS_RequestAction($ioID, "GetDevices", null);
-        if (!is_array($devices)) {
-            return;
-        }
-
-        foreach ($devices as $device) {
-            if ((string)$device['serialnumber'] !== $serial) {
-                continue;
-            }
-
-            if (isset($device['position'])) {
-                SetValue($this->GetIDForIdent("Latitude"),  (float)$device['position']['lat']);
-                SetValue($this->GetIDForIdent("Longitude"), (float)$device['position']['lng']);
-            }
-
-            if (isset($device['battery'])) {
-                SetValue($this->GetIDForIdent("Battery"), (int)$device['battery']);
-            }
-
-            if (isset($device['last_seen_timestamp'])) {
-                SetValue($this->GetIDForIdent("LastSeen"), (string)$device['last_seen_timestamp']);
-            }
-
-            $this->WriteAttributeInteger("LastUpdate", time());
-            break;
-        }
+    if (!$this->HasActiveParent()) {
+        $this->LogMessage("IMBD no active parent", KL_WARNING);
+        return;
     }
+
+    $serial = trim($this->ReadPropertyString("SerialNumber"));
+    $this->LogMessage("IMBD Serial=" . $serial, KL_MESSAGE);
+
+    $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+    $this->LogMessage("IMBD IOID=" . $ioID, KL_MESSAGE);
+
+    $devices = IPS_RequestAction($ioID, "GetDevices", null);
+
+    $this->LogMessage(
+        "IMBD Devices type=" . gettype($devices),
+        KL_MESSAGE
+    );
+
+    if (!is_array($devices)) {
+        $this->LogMessage("IMBD Devices is not array", KL_ERROR);
+        return;
+    }
+
+    $this->LogMessage(
+        "IMBD Devices JSON=" . json_encode($devices),
+        KL_MESSAGE
+    );
+
+    foreach ($devices as $device) {
+        if (!isset($device['serialnumber'])) {
+            continue;
+        }
+
+        if ((string)$device['serialnumber'] !== $serial) {
+            continue;
+        }
+
+        $this->LogMessage("IMBD matching device found", KL_MESSAGE);
+
+        if (isset($device['position'])) {
+            SetValue($this->GetIDForIdent("Latitude"),  (float)$device['position']['lat']);
+            SetValue($this->GetIDForIdent("Longitude"), (float)$device['position']['lng']);
+        }
+
+        if (isset($device['battery'])) {
+            SetValue($this->GetIDForIdent("Battery"), (int)$device['battery']);
+        }
+
+        if (isset($device['last_seen_timestamp'])) {
+            SetValue($this->GetIDForIdent("LastSeen"), (string)$device['last_seen_timestamp']);
+        }
+
+        $this->WriteAttributeInteger("LastUpdate", time());
+        break;
+    }
+}
+
 
     public function RequestAction($Ident, $Value)
     {
