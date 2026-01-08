@@ -15,7 +15,11 @@ class ItsMyBikeIO extends IPSModule
         $this->RegisterAttributeString("Token", "");
         $this->RegisterAttributeString("AuthState", "INIT");
         $this->RegisterAttributeString("DevicesCache", "[]");
-
+        $this->RegisterTimer(
+            "UpdateDevices",
+            0,
+            'IMB_UpdateDevices($_IPS["TARGET"]);'
+        );
     }
 
     public function ApplyChanges()
@@ -23,15 +27,17 @@ class ItsMyBikeIO extends IPSModule
         parent::ApplyChanges();
     
         if ($this->ReadAttributeString("AuthState") === "AUTH_OK") {
+            // Timer IMMER aktivieren, wenn wir eingeloggt sind
+            $this->SetTimerInterval("UpdateDevices", 60 * 1000);
             return;
         }
     
         $smsCode = trim($this->ReadPropertyString("SMSCode"));
-    
         if ($smsCode !== "") {
             $this->CreateTokenFromSMS($smsCode);
         }
     }
+
 
 
 
@@ -296,46 +302,66 @@ class ItsMyBikeIO extends IPSModule
     }
 
 
-public function GetDeviceOptions()
-{
-
-    $this->LogMessage(
-    "IMB: GetDeviceOptions() called, AuthState=" .
-    $this->ReadAttributeString("AuthState"),
-    KL_MESSAGE
-    );
+    public function GetDeviceOptions()
+    {
     
-    if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
-        return [];
+        $this->LogMessage(
+        "IMB: GetDeviceOptions() called, AuthState=" .
+        $this->ReadAttributeString("AuthState"),
+        KL_MESSAGE
+        );
+        
+        if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
+            return [];
+        }
+    
+        $cache = json_decode(
+            $this->ReadAttributeString("DevicesCache"),
+            true
+        );
+    
+        if (!is_array($cache)) {
+            return [];
+        }
+    
+        $options = [];
+        foreach ($cache as $device) {
+            if (isset($device['serialnumber'], $device['name'])) {
+                $options[] = [
+                    "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
+                    "value" => (string)$device['serialnumber']
+                ];
+            }
+        }
+    
+        $this->LogMessage(
+            "IMB: DevicesCache=" . $this->ReadAttributeString("DevicesCache"),
+            KL_MESSAGE
+        );
+        
+        return $options;
     }
 
-    $cache = json_decode(
-        $this->ReadAttributeString("DevicesCache"),
-        true
-    );
-
-    if (!is_array($cache)) {
-        return [];
-    }
-
-    $options = [];
-    foreach ($cache as $device) {
-        if (isset($device['serialnumber'], $device['name'])) {
-            $options[] = [
-                "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
-                "value" => (string)$device['serialnumber']
-            ];
+    public function UpdateDevices()
+    {
+        if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
+            return;
+        }
+    
+        $devices = $this->GetDevices();
+        if (!is_array($devices)) {
+            return;
+        }
+    
+        // Alle verbundenen Device-Instanzen updaten
+        foreach (IPS_GetInstanceListByModuleID("{6E6B1F8D-7A1A-4B0E-9E9C-3A9F7D9F5C01}") as $instID) {
+            if (IPS_GetInstance($instID)['ConnectionID'] !== $this->InstanceID) {
+                continue;
+            }
+    
+            @IPS_RequestAction($instID, "Update", null);
         }
     }
-
-    $this->LogMessage(
-        "IMB: DevicesCache=" . $this->ReadAttributeString("DevicesCache"),
-        KL_MESSAGE
-    );
-    
-    return $options;
-}
-
 
 
 }
