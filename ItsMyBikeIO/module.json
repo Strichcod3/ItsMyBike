@@ -2,7 +2,6 @@
   "id": "{A1C8E0B5-2D9F-4A89-9A8C-6B5A4F8F1E10}",
   "name": "ItsMyBike IO",
   "type": 1,
-  "gateway": true,
   "vendor": "IoT Venture / ItsMyBike",
   "aliases": ["ItsMyBike Gateway"],
   "parentRequirements": [],
