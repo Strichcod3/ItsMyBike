@@ -22,31 +22,13 @@ class ItsMyBikeDevice extends IPSModule
     
     public function GetConfigurationForm()
     {
-        $this->LogMessage("IMB Device: GetConfigurationForm()", KL_MESSAGE);
-    
-        // 1. Alle vorhandenen IO-Instanzen sammeln
-        $ioOptions = [];
-        foreach (IPS_GetInstanceListByModuleID(
-            "{A1C8E0B5-2D9F-4A89-9A8C-6B5A4F8F1E10}" // ItsMyBike IO
-        ) as $id) {
-            $ioOptions[] = [
-                "label" => IPS_GetName($id),
-                "value" => $id
-            ];
-        }
-    
-        // 2. Tracker-Dropdown vorbereiten
         $trackerOptions = [
-            [
-                "label" => "-- Tracker auswählen --",
-                "value" => ""
-            ]
+            ["label" => "-- Tracker auswählen --", "value" => ""]
         ];
     
-        $ioID = $this->ReadPropertyInteger("IOInstance");
-        if ($ioID > 0 && IPS_InstanceExists($ioID)) {
-        $devices = @IPS_RequestAction($ioID, "GetDeviceOptions", null);
-
+        $ioIDs = IPS_GetInstanceListByModuleID('{A1C8E0B5-2D9F-4A89-9A8C-6B5A4F8F1E10}');
+        if (count($ioIDs) === 1) {
+            $devices = IPS_RequestAction($ioIDs[0], "GetDeviceOptions", null);
             if (is_array($devices)) {
                 $trackerOptions = array_merge($trackerOptions, $devices);
             }
@@ -55,22 +37,15 @@ class ItsMyBikeDevice extends IPSModule
         return json_encode([
             "elements" => [
                 [
-                    "type"    => "Select",
-                    "name"    => "IOInstance",
-                    "caption" => "ItsMyBike IO",
-                    "options" => $ioOptions,
-                    "onChange" => "IMBD_ReloadFormAction(\$id);"
-                ],
-
-                [
-                    "type"    => "Select",
-                    "name"    => "SerialNumber",
+                    "type" => "Select",
+                    "name" => "SerialNumber",
                     "caption" => "Tracker auswählen",
                     "options" => $trackerOptions
                 ]
             ]
         ]);
     }
+
 
 
 
@@ -161,7 +136,7 @@ class ItsMyBikeDevice extends IPSModule
         }
     }
 
-    public function ReloadFormAction($InsID, $Value)
+    public function ReloadFormAction($InstanceID, $Value)
     {
         $this->ReloadForm();
     }
