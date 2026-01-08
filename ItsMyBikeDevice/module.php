@@ -61,7 +61,7 @@ class ItsMyBikeDevice extends IPSModule
                     "name"    => "IOInstance",
                     "caption" => "ItsMyBike IO",
                     "options" => $ioOptions,
-                    "onChange": "ReloadForm"
+                    "onChange" => "ReloadForm"
                 ],
 
                 [
