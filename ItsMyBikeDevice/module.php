@@ -23,19 +23,23 @@ class ItsMyBikeDevice extends IPSModule
     {
         $options = [];
     
-        // Leere Default-Option (wichtig!)
+        // Leerer Default
         $options[] = [
             "label" => "-- Tracker auswählen --",
             "value" => ""
         ];
     
-        // IO über ConnectionID ermitteln (einziger korrekter Weg)
+        // IO ermitteln
         $instance = IPS_GetInstance($this->InstanceID);
         $ioID = $instance['ConnectionID'];
     
         if ($ioID > 0 && IPS_InstanceExists($ioID)) {
-            $devices = @IPS_RequestAction($ioID, "GetDevices", null);
+            $cache = IPS_GetProperty($ioID, "DevicesCache");
+            if ($cache === "") {
+                $cache = IPS_GetInstance($ioID)['Attributes']['DevicesCache'] ?? "[]";
+            }
     
+            $devices = json_decode($cache, true);
             if (is_array($devices)) {
                 foreach ($devices as $device) {
                     if (isset($device['serialnumber'], $device['name'])) {
@@ -57,9 +61,15 @@ class ItsMyBikeDevice extends IPSModule
                     "options" => $options
                 ]
             ],
-            "actions" => []
+            "actions" => [
+                [
+                    "type"  => "Label",
+                    "label" => "Hinweis: Falls leer, im IO einmal \"GetDevices\" auslösen"
+                ]
+            ]
         ]);
     }
+
 
 
 
