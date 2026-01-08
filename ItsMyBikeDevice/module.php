@@ -21,17 +21,40 @@ class ItsMyBikeDevice extends IPSModule
     
     public function GetConfigurationForm()
     {
+        $options = [];
+    
+        if ($this->HasActiveParent()) {
+            $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+    
+            if ($ioID > 0) {
+                $devices = @IPS_RequestAction($ioID, "GetDevices", null);
+    
+                if (is_array($devices)) {
+                    foreach ($devices as $device) {
+                        if (isset($device['serialnumber']) && isset($device['name'])) {
+                            $options[] = [
+                                "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
+                                "value" => (string)$device['serialnumber']
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    
         return json_encode([
             "elements" => [
                 [
-                    "type"    => "ValidationTextBox",
+                    "type"    => "Select",
                     "name"    => "SerialNumber",
-                    "caption" => "Seriennummer des Trackers"
+                    "caption" => "Tracker auswählen",
+                    "options" => $options
                 ]
             ],
             "actions" => []
         ]);
     }
+
     public function ApplyChanges()
     {
         parent::ApplyChanges();
