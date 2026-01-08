@@ -20,19 +20,17 @@ class ItsMyBikeIO extends IPSModule
     {
         parent::ApplyChanges();
     
-        $smsCode = trim($this->ReadPropertyString("SMSCode"));
-        $token   = $this->ReadAttributeString("Token");
-    
-        // Wenn bereits eingeloggt → nichts tun
-        if ($token !== "") {
+        if ($this->ReadAttributeString("AuthState") === "AUTH_OK") {
             return;
         }
     
-        // Wenn SMS-Code gesetzt wurde → automatisch Token erzeugen
+        $smsCode = trim($this->ReadPropertyString("SMSCode"));
+    
         if ($smsCode !== "") {
             $this->CreateTokenFromSMS($smsCode);
         }
     }
+
 
 
     /**********************************************************
@@ -107,7 +105,7 @@ class ItsMyBikeIO extends IPSModule
             IPS_SetProperty($this->InstanceID, "SMSCode", "");
             IPS_ApplyChanges($this->InstanceID);
         } else {
-            $this->WriteAttributeString("AuthState", "ERROR");
+            $this->WriteAttributeString("AuthState", "TOKEN_FAILED");
         }
     
         $this->ReloadForm();
@@ -148,66 +146,8 @@ class ItsMyBikeIO extends IPSModule
             ]
         ]);
     }
+ 
 
-    
-    public function CreateToken()
-    {
-        $phone   = trim($this->ReadPropertyString("Phone"));
-        $brand   = trim($this->ReadPropertyString("AppBrand"));
-        $smsCode = trim($this->ReadPropertyString("SMSCode"));
-    
-        if ($phone === "" || $smsCode === "") {
-            $this->WriteAttributeString("AuthState", "MISSING_DATA");
-            $this->ReloadForm();
-            return;
-        }
-    
-        [$httpCode, $response] = $this->ApiRequest(
-            "POST",
-            "/api/phone/v2/token",
-            [
-                "user" => [
-                    "phone"     => $phone,
-                    "smscode"   => $smsCode,
-                    "app_brand" => $brand
-                ]
-            ]
-        );
-    
-        $this->LogMessage(
-            "IMB: CreateToken HTTP=$httpCode RESPONSE=$response",
-            KL_MESSAGE
-        );
-    
-        if ($httpCode === 200) {
-            $data = json_decode($response, true);
-    
-            if (isset($data['user_token']['access_token'])) {
-                // Token speichern
-                $this->WriteAttributeString(
-                    "Token",
-                    $data['user_token']['access_token']
-                );
-    
-                // Status setzen
-                $this->WriteAttributeString("AuthState", "AUTH_OK");
-    
-                // SMS-Code automatisch leeren (sehr wichtig!)
-                IPS_SetProperty($this->InstanceID, "SMSCode", "");
-                IPS_ApplyChanges($this->InstanceID);
-            } else {
-                $this->WriteAttributeString("AuthState", "INVALID_RESPONSE");
-            }
-        } elseif ($httpCode === 403) {
-            $this->WriteAttributeString("AuthState", "INVALID_SMS_CODE");
-        } elseif ($httpCode === 429) {
-            $this->WriteAttributeString("AuthState", "RATE_LIMIT");
-        } else {
-            $this->WriteAttributeString("AuthState", "ERROR_HTTP_$httpCode");
-        }
-    
-        $this->ReloadForm();
-    }
 
 
     private function ApiRequest(string $method, string $path, array $body = null)
