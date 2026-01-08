@@ -280,6 +280,15 @@ class ItsMyBikeIO extends IPSModule
     
         return $data;
     }
-    
+
+
+    public function RequestAction($Ident, $Value)
+    {
+        switch ($Ident) {
+            case "GetDevices":
+                return $this->GetDevices();
+        }
+    }
+
 
 }
