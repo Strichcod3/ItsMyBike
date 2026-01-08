@@ -39,10 +39,37 @@ class ItsMyBikeIO extends IPSModule
      * Platzhalter für spätere API-Funktionen
      **********************************************************/
 
-    public function RequestSMSCode()
-    {
-        // kommt später
+public function RequestSMSCode()
+{
+    $phone = trim($this->ReadPropertyString("Phone"));
+    $brand = trim($this->ReadPropertyString("AppBrand"));
+
+    if ($phone === "") {
+        $this->WriteAttributeString("AuthState", "NO_PHONE");
+        $this->ReloadForm();
+        return;
     }
+
+    [$code, $resp] = $this->ApiRequest(
+        "PUT",
+        "/api/phone/v2/token/request_sms_code",
+        [
+            "user" => [
+                "phone"     => $phone,
+                "app_brand" => $brand
+            ]
+        ]
+    );
+
+    if ($code === 200) {
+        $this->WriteAttributeString("AuthState", "SMS_REQUESTED");
+    } else {
+        $this->WriteAttributeString("AuthState", "ERROR ($code)");
+    }
+
+    $this->ReloadForm();
+}
+
     
     private function CreateTokenFromSMS(string $smsCode)
     {
