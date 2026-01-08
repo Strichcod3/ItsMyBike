@@ -267,10 +267,15 @@ class ItsMyBikeIO extends IPSModule
             // Neues Device anlegen
             $instID = IPS_CreateInstance("{6E6B1F8D-7A1A-4B0E-9E9C-3A9F7D9F5C01}");
             IPS_SetName($instID, $device['name']);
-            IPS_SetParent($instID, $this->InstanceID);   // WICHTIG
+            
+            // 1️⃣ Logische Verbindung herstellen (wichtig!)
+            IPS_SetParent($instID, $this->InstanceID);
             IPS_SetProperty($instID, "SerialNumber", $serial);
             IPS_ApplyChanges($instID);
-    
+            
+            // 2️⃣ Optisch ins Root verschieben (optional, aber dein Wunsch)
+            IPS_SetParent($instID, 0);
+            
             $this->LogMessage(
                 "IMB: Device created: {$device['name']} ({$serial})",
                 KL_MESSAGE
