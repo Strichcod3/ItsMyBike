@@ -74,4 +74,13 @@ class ItsMyBikeDevice extends IPSModule
             break;
         }
     }
+
+    public function RequestAction($Ident, $Value)
+    {
+        if ($Ident === "Update") {
+            $this->Update();
+        }
+    }
+
+    
 }
