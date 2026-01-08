@@ -7,7 +7,6 @@ class ItsMyBikeDevice extends IPSModule
         parent::Create();
 
         // Konfiguration
-        $this->RegisterPropertyInteger("IOInstance", 0);
         $this->RegisterPropertyString("SerialNumber", "");
 
         // Status / Laufzeit
@@ -26,9 +25,9 @@ class ItsMyBikeDevice extends IPSModule
             ["label" => "-- Tracker auswählen --", "value" => ""]
         ];
     
-        $ioIDs = IPS_GetInstanceListByModuleID('{A1C8E0B5-2D9F-4A89-9A8C-6B5A4F8F1E10}');
-        if (count($ioIDs) === 1) {
-            $devices = IPS_RequestAction($ioIDs[0], "GetDeviceOptions", null);
+        $ioID = $this->GetIOInstanceID();
+        if ($ioID > 0) {
+            $devices = IPS_RequestAction($ioID, "GetDeviceOptions", null);
             if (is_array($devices)) {
                 $trackerOptions = array_merge($trackerOptions, $devices);
             }
@@ -37,8 +36,8 @@ class ItsMyBikeDevice extends IPSModule
         return json_encode([
             "elements" => [
                 [
-                    "type" => "Select",
-                    "name" => "SerialNumber",
+                    "type"    => "Select",
+                    "name"    => "SerialNumber",
                     "caption" => "Tracker auswählen",
                     "options" => $trackerOptions
                 ]
@@ -54,27 +53,20 @@ class ItsMyBikeDevice extends IPSModule
 
 
 
+
     public function ApplyChanges()
     {
         parent::ApplyChanges();
     
-        $ioID = $this->ReadPropertyInteger("IOInstance");
-    
-        $this->LogMessage(
-            "IMB Device: ApplyChanges(), IOInstance=" . $ioID,
-            KL_MESSAGE
-        );
-    
-        if ($ioID <= 0 || !IPS_InstanceExists($ioID)) {
-            $this->SetStatus(201);
+        $ioID = $this->GetIOInstanceID();
+        if ($ioID === 0) {
+            $this->SetStatus(201); // Kein IO vorhanden
             return;
         }
     
-        // 🔑 ENTSCHEIDEND: Formular neu aufbauen
-        $this->ReloadForm();
-    
-        $this->SetStatus(102);
+        $this->SetStatus(102); // Aktiv
     }
+
 
 
 
@@ -90,8 +82,8 @@ class ItsMyBikeDevice extends IPSModule
         }
     
         // IO-Instanz ermitteln
-        $ioID = $this->ReadPropertyInteger("IOInstance");
-        if ($ioID <= 0 || !IPS_InstanceExists($ioID)) {
+        $ioID = $this->GetIOInstanceID();
+        if ($ioID === 0) {
             return;
         }
     
@@ -136,11 +128,20 @@ class ItsMyBikeDevice extends IPSModule
         }
     }
 
-    public function ReloadFormAction($InstanceID, $Value)
-    {
-        $this->ReloadForm();
-    }
 
+
+    private function GetIOInstanceID(): int
+    {
+        $ioIDs = IPS_GetInstanceListByModuleID(
+            '{A1C8E0B5-2D9F-4A89-9A8C-6B5A4F8F1E10}' // ItsMyBike IO
+        );
+    
+        if (count($ioIDs) !== 1) {
+            return 0;
+        }
+    
+        return $ioIDs[0];
+    }
 
 
 
