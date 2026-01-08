@@ -21,6 +21,7 @@ class ItsMyBikeDevice extends IPSModule
     
     public function GetConfigurationForm()
     {
+        $this->LogMessage("IMB Device: GetConfigurationForm()", KL_MESSAGE);
         $options = [
             [
                 "label" => "-- Tracker auswählen --",
@@ -34,7 +35,12 @@ class ItsMyBikeDevice extends IPSModule
         if ($ioID > 0 && IPS_InstanceExists($ioID)) {
             // 🔴 einzig erlaubter Weg
             $ioOptions = @IPS_RequestAction($ioID, "GetDeviceOptions", null);
-    
+
+            $this->LogMessage(
+                "IMB Device: ioOptions=" . print_r($ioOptions, true),
+                KL_MESSAGE
+            );
+            
             if (is_array($ioOptions)) {
                 $options = array_merge($options, $ioOptions);
             }
