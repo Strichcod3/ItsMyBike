@@ -239,6 +239,13 @@ class ItsMyBikeIO extends IPSModule
 
 public function GetDeviceOptions()
 {
+
+    $this->LogMessage(
+    "IMB: GetDeviceOptions() called, AuthState=" .
+    $this->ReadAttributeString("AuthState"),
+    KL_MESSAGE
+    );
+    
     if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
         return [];
     }
@@ -262,6 +269,11 @@ public function GetDeviceOptions()
         }
     }
 
+    $this->LogMessage(
+        "IMB: DevicesCache=" . $this->ReadAttributeString("DevicesCache"),
+        KL_MESSAGE
+    );
+    
     return $options;
 }
 
