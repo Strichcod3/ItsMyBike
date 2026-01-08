@@ -4,10 +4,9 @@
   "type": 1,
   "vendor": "IoT Venture / ItsMyBike",
   "aliases": ["ItsMyBike Gateway"],
+  "url": "https://github.com/Strichcod3/ItsMyBike",
   "parentRequirements": [],
   "childRequirements": [],
-  "implemented": [
-    "{D2B9F5A1-8A77-4C3C-9A4E-9A4B0F3C7E11}"
-  ],
+  "implemented": [],
   "prefix": "IMB"
 }
