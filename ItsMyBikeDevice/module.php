@@ -18,7 +18,20 @@ class ItsMyBikeDevice extends IPSModule
         $this->RegisterVariableInteger("Battery", "Battery (%)");
         $this->RegisterVariableString("LastSeen", "Last Seen");
     }
-
+    
+    public function GetConfigurationForm()
+    {
+        return json_encode([
+            "elements" => [
+                [
+                    "type"    => "ValidationTextBox",
+                    "name"    => "SerialNumber",
+                    "caption" => "Seriennummer des Trackers"
+                ]
+            ],
+            "actions" => []
+        ]);
+    }
     public function ApplyChanges()
     {
         parent::ApplyChanges();
