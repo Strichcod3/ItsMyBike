@@ -45,7 +45,10 @@ class ItsMyBikeDevice extends IPSModule
     
         $ioID = $this->ReadPropertyInteger("IOInstance");
         if ($ioID > 0 && IPS_InstanceExists($ioID)) {
-            $devices = @IPS_RequestAction($ioID, "GetDeviceOptions", null);
+            $devices = @IPS_RunScriptText(
+                'return IMB_GetDeviceOptions(' . $ioID . ');'
+            );
+
             if (is_array($devices)) {
                 $trackerOptions = array_merge($trackerOptions, $devices);
             }
