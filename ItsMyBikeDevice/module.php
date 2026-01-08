@@ -81,13 +81,23 @@ class ItsMyBikeDevice extends IPSModule
         parent::ApplyChanges();
     
         $ioID = $this->ReadPropertyInteger("IOInstance");
+    
+        $this->LogMessage(
+            "IMB Device: ApplyChanges(), IOInstance=" . $ioID,
+            KL_MESSAGE
+        );
+    
         if ($ioID <= 0 || !IPS_InstanceExists($ioID)) {
-            $this->SetStatus(201); // Kein IO ausgewählt
+            $this->SetStatus(201);
             return;
         }
     
-        $this->SetStatus(102); // Aktiv
+        // 🔑 ENTSCHEIDEND: Formular neu aufbauen
+        $this->ReloadForm();
+    
+        $this->SetStatus(102);
     }
+
 
 
     /**********************************************************
