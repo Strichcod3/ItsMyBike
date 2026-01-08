@@ -104,6 +104,7 @@ class ItsMyBikeIO extends IPSModule
             $this->WriteAttributeString("AuthState", "AUTH_OK");
 
              $this->GetDevices();
+             $this->SyncDevices();
              $this->ReloadForm();
     
             // SMS-Code automatisch leeren (sehr wichtig!)
@@ -145,12 +146,18 @@ class ItsMyBikeIO extends IPSModule
                     "onClick" => "IMB_RequestSMSCode(\$id);"
                 ],
                 [
+                    "type"    => "Button",
+                    "label"   => "Tracker synchronisieren",
+                    "onClick" => "IMB_SyncDevices(\$id);"
+                ],
+                [
                     "type"  => "Label",
                     "label" => "Status: $state"
                 ]
             ]
         ]);
     }
+
  
 
 
@@ -223,6 +230,53 @@ class ItsMyBikeIO extends IPSModule
         return $data;
     }
 
+    public function SyncDevices()
+    {
+        if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
+            $this->LogMessage("IMB: SyncDevices aborted, not authenticated", KL_WARNING);
+            return;
+        }
+    
+        $devices = $this->GetDevices();
+        if (!is_array($devices)) {
+            return;
+        }
+    
+        foreach ($devices as $device) {
+            if (!isset($device['serialnumber'], $device['name'])) {
+                continue;
+            }
+    
+            $serial = (string)$device['serialnumber'];
+            $found  = false;
+    
+            foreach (IPS_GetInstanceListByModuleID("{6E6B1F8D-7A1A-4B0E-9E9C-3A9F7D9F5C01}") as $instID) {
+                if (
+                    IPS_GetInstance($instID)['ConnectionID'] === $this->InstanceID &&
+                    IPS_GetProperty($instID, "SerialNumber") === $serial
+                ) {
+                    $found = true;
+                    break;
+                }
+            }
+    
+            if ($found) {
+                continue;
+            }
+    
+            // Neues Device anlegen
+            $instID = IPS_CreateInstance("{6E6B1F8D-7A1A-4B0E-9E9C-3A9F7D9F5C01}");
+            IPS_SetName($instID, $device['name']);
+            IPS_SetParent($instID, $this->InstanceID);   // WICHTIG
+            IPS_SetProperty($instID, "SerialNumber", $serial);
+            IPS_ApplyChanges($instID);
+    
+            $this->LogMessage(
+                "IMB: Device created: {$device['name']} ({$serial})",
+                KL_MESSAGE
+            );
+        }
+    }
 
 
     public function RequestAction($Ident, $Value)
