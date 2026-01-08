@@ -1,0 +1,13 @@
+{
+  "id": "{6E6B1F8D-7A1A-4B0E-9E9C-3A9F7D9F5C01}",
+  "name": "ItsMyBike Device",
+  "type": 3,
+  "vendor": "IoT Venture / ItsMyBike",
+  "aliases": ["ItsMyBike Tracker"],
+  "parentRequirements": [
+    "{A1C8E0B5-2D9F-4A89-9A8C-6B5A4F8F1E10}"
+  ],
+  "childRequirements": [],
+  "implemented": [],
+  "prefix": "IMBD"
+}
