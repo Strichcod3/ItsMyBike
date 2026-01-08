@@ -4,7 +4,6 @@
   "type": 1,
   "vendor": "IoT Venture / ItsMyBike",
   "aliases": ["ItsMyBike Gateway"],
-
   "parentRequirements": [],
   "childRequirements": [],
   "implemented": [
