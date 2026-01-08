@@ -7,6 +7,7 @@ class ItsMyBikeDevice extends IPSModule
         parent::Create();
 
         // Konfiguration
+        $this->RegisterPropertyInteger("IOInstance", 0);
         $this->RegisterPropertyString("SerialNumber", "");
 
         // Status / Laufzeit
@@ -22,27 +23,31 @@ class ItsMyBikeDevice extends IPSModule
     public function GetConfigurationForm()
     {
         $this->LogMessage("IMB Device: GetConfigurationForm()", KL_MESSAGE);
-        $options = [
+    
+        // 1. Alle vorhandenen IO-Instanzen sammeln
+        $ioOptions = [];
+        foreach (IPS_GetInstanceListByModuleID(
+            "{A1C8E0B5-2D9F-4A89-9A8C-6B5A4F8F1E10}" // ItsMyBike IO
+        ) as $id) {
+            $ioOptions[] = [
+                "label" => IPS_GetName($id),
+                "value" => $id
+            ];
+        }
+    
+        // 2. Tracker-Dropdown vorbereiten
+        $trackerOptions = [
             [
                 "label" => "-- Tracker auswählen --",
                 "value" => ""
             ]
         ];
     
-        // IO ermitteln
-        $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
-    
+        $ioID = $this->ReadPropertyInteger("IOInstance");
         if ($ioID > 0 && IPS_InstanceExists($ioID)) {
-            // 🔴 einzig erlaubter Weg
-            $ioOptions = @IPS_RequestAction($ioID, "GetDeviceOptions", null);
-
-            $this->LogMessage(
-                "IMB Device: ioOptions=" . print_r($ioOptions, true),
-                KL_MESSAGE
-            );
-            
-            if (is_array($ioOptions)) {
-                $options = array_merge($options, $ioOptions);
+            $devices = @IPS_RequestAction($ioID, "GetDeviceOptions", null);
+            if (is_array($devices)) {
+                $trackerOptions = array_merge($trackerOptions, $devices);
             }
         }
     
@@ -50,14 +55,20 @@ class ItsMyBikeDevice extends IPSModule
             "elements" => [
                 [
                     "type"    => "Select",
+                    "name"    => "IOInstance",
+                    "caption" => "ItsMyBike IO",
+                    "options" => $ioOptions
+                ],
+                [
+                    "type"    => "Select",
                     "name"    => "SerialNumber",
                     "caption" => "Tracker auswählen",
-                    "options" => $options
+                    "options" => $trackerOptions
                 ]
-            ],
-            "actions" => []
+            ]
         ]);
     }
+
 
 
 
@@ -68,15 +79,16 @@ class ItsMyBikeDevice extends IPSModule
     public function ApplyChanges()
     {
         parent::ApplyChanges();
-
-        // Prüfen, ob IO verbunden ist
-        if (!$this->HasActiveParent()) {
-            $this->SetStatus(201); // Kein Gateway
+    
+        $ioID = $this->ReadPropertyInteger("IOInstance");
+        if ($ioID <= 0 || !IPS_InstanceExists($ioID)) {
+            $this->SetStatus(201); // Kein IO ausgewählt
             return;
         }
-
+    
         $this->SetStatus(102); // Aktiv
     }
+
 
     /**********************************************************
      * Platzhalter – kommt als Nächstes
@@ -84,19 +96,14 @@ class ItsMyBikeDevice extends IPSModule
 
     public function Update()
     {
-        if (!$this->HasActiveParent()) {
-            $this->SetStatus(201);
-            return;
-        }
-    
         $serial = trim($this->ReadPropertyString("SerialNumber"));
         if ($serial === "") {
             return;
         }
     
         // IO-Instanz ermitteln
-        $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
-        if ($ioID === 0) {
+        $ioID = $this->ReadPropertyInteger("IOInstance");
+        if ($ioID <= 0 || !IPS_InstanceExists($ioID)) {
             return;
         }
     
