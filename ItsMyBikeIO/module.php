@@ -103,7 +103,7 @@ class ItsMyBikeIO extends IPSModule
                 [
                     "type"    => "Button",
                     "label"   => "SMS anfordern",
-                    "onClick" => "IMB_RequestSMSCode($id);"
+                    "onClick" => "IMB_RequestSMSCode(\$id);"
                 ],
                 [
                     "type"  => "Label",
