@@ -14,6 +14,8 @@ class ItsMyBikeIO extends IPSModule
         // Interner Zustand
         $this->RegisterAttributeString("Token", "");
         $this->RegisterAttributeString("AuthState", "INIT");
+        $this->RegisterAttributeString("DevicesCache", "[]");
+
     }
 
     public function ApplyChanges()
@@ -194,7 +196,6 @@ class ItsMyBikeIO extends IPSModule
 
     public function GetDevices()
     {
-        // Nur liefern, wenn authentifiziert
         if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
             return null;
         }
@@ -205,21 +206,21 @@ class ItsMyBikeIO extends IPSModule
         );
     
         if ($httpCode !== 200) {
-            $this->LogMessage(
-                "IMB: GetDevices failed HTTP=$httpCode",
-                KL_WARNING
-            );
+            $this->LogMessage("IMB: GetDevices failed HTTP=$httpCode", KL_WARNING);
             return null;
         }
     
         $data = json_decode($response, true);
-    
         if (!is_array($data)) {
             return null;
         }
     
+        // 🔴 Cache aktualisieren
+        $this->WriteAttributeString("DevicesCache", json_encode($data));
+    
         return $data;
     }
+
 
 
     public function RequestAction($Ident, $Value)
