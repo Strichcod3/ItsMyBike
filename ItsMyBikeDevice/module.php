@@ -59,7 +59,7 @@ class ItsMyBikeDevice extends IPSModule
                     "name"    => "IOInstance",
                     "caption" => "ItsMyBike IO",
                     "options" => $ioOptions,
-                    "onChange" => "ReloadForm"
+                    "onChange" => "IMBD_ReloadFormAction(\$id);"
                 ],
 
                 [
@@ -161,19 +161,12 @@ class ItsMyBikeDevice extends IPSModule
         }
     }
 
-
-
-    public function RequestAction($Ident, $Value)
+    public function ReloadFormAction(int $id)
     {
-        switch ($Ident) {
-            case "ReloadForm":
-                $this->ReloadForm();
-                break;
-    
-            default:
-                return;
-        }
+        $this->ReloadForm();
     }
+
+
 
 
 }
