@@ -39,44 +39,44 @@ class ItsMyBikeIO extends IPSModule
      * Platzhalter für spätere API-Funktionen
      **********************************************************/
 
-public function RequestSMSCode()
-{
-    $this->LogMessage("IMB: RequestSMSCode() called", KL_MESSAGE);
-
-    $phone = trim($this->ReadPropertyString("Phone"));
-    $brand = trim($this->ReadPropertyString("AppBrand"));
-
-    if ($phone === "") {
-        $this->WriteAttributeString("AuthState", "NO_PHONE");
-        $this->LogMessage("IMB: No phone number set", KL_WARNING);
-        $this->ReloadForm();
-        return;
-    }
-
-    [$httpCode, $response] = $this->ApiRequest(
-        "PUT",
-        "/api/phone/v2/token/request_sms_code",
-        [
-            "user" => [
-                "phone"     => $phone,
-                "app_brand" => $brand
+    public function RequestSMSCode()
+    {
+        $this->LogMessage("IMB: RequestSMSCode() called", KL_MESSAGE);
+    
+        $phone = trim($this->ReadPropertyString("Phone"));
+        $brand = trim($this->ReadPropertyString("AppBrand"));
+    
+        if ($phone === "") {
+            $this->WriteAttributeString("AuthState", "NO_PHONE");
+            $this->LogMessage("IMB: No phone number set", KL_WARNING);
+            $this->ReloadForm();
+            return;
+        }
+    
+        [$httpCode, $response] = $this->ApiRequest(
+            "PUT",
+            "/api/phone/v2/token/request_sms_code",
+            [
+                "user" => [
+                    "phone"     => $phone,
+                    "app_brand" => $brand
+                ]
             ]
-        ]
-    );
-
-    $this->LogMessage(
-        "IMB: SMS request HTTP=$httpCode RESPONSE=" . $response,
-        KL_MESSAGE
-    );
-
-    if ($httpCode === 200) {
-        $this->WriteAttributeString("AuthState", "SMS_REQUESTED");
-    } else {
-        $this->WriteAttributeString("AuthState", "ERROR_HTTP_$httpCode");
+        );
+    
+        $this->LogMessage(
+            "IMB: SMS request HTTP=$httpCode RESPONSE=" . $response,
+            KL_MESSAGE
+        );
+    
+        if ($httpCode === 200) {
+            $this->WriteAttributeString("AuthState", "SMS_REQUESTED");
+        } else {
+            $this->WriteAttributeString("AuthState", "ERROR_HTTP_$httpCode");
+        }
+    
+        $this->ReloadForm();
     }
-
-    $this->ReloadForm();
-}
 
 
     
@@ -152,11 +152,104 @@ public function RequestSMSCode()
     
     public function CreateToken()
     {
-        // kommt später
+        $phone   = trim($this->ReadPropertyString("Phone"));
+        $brand   = trim($this->ReadPropertyString("AppBrand"));
+        $smsCode = trim($this->ReadPropertyString("SMSCode"));
+    
+        if ($phone === "" || $smsCode === "") {
+            $this->WriteAttributeString("AuthState", "MISSING_DATA");
+            $this->ReloadForm();
+            return;
+        }
+    
+        [$httpCode, $response] = $this->ApiRequest(
+            "POST",
+            "/api/phone/v2/token",
+            [
+                "user" => [
+                    "phone"     => $phone,
+                    "smscode"   => $smsCode,
+                    "app_brand" => $brand
+                ]
+            ]
+        );
+    
+        $this->LogMessage(
+            "IMB: CreateToken HTTP=$httpCode RESPONSE=$response",
+            KL_MESSAGE
+        );
+    
+        if ($httpCode === 200) {
+            $data = json_decode($response, true);
+    
+            if (isset($data['user_token']['access_token'])) {
+                // Token speichern
+                $this->WriteAttributeString(
+                    "Token",
+                    $data['user_token']['access_token']
+                );
+    
+                // Status setzen
+                $this->WriteAttributeString("AuthState", "AUTH_OK");
+    
+                // SMS-Code automatisch leeren (sehr wichtig!)
+                IPS_SetProperty($this->InstanceID, "SMSCode", "");
+                IPS_ApplyChanges($this->InstanceID);
+            } else {
+                $this->WriteAttributeString("AuthState", "INVALID_RESPONSE");
+            }
+        } elseif ($httpCode === 403) {
+            $this->WriteAttributeString("AuthState", "INVALID_SMS_CODE");
+        } elseif ($httpCode === 429) {
+            $this->WriteAttributeString("AuthState", "RATE_LIMIT");
+        } else {
+            $this->WriteAttributeString("AuthState", "ERROR_HTTP_$httpCode");
+        }
+    
+        $this->ReloadForm();
     }
 
-    public function ApiRequest(string $method, string $endpoint, array $body = null)
+
+    private function ApiRequest(string $method, string $path, array $body = null)
     {
-        // kommt später
+        $url = "https://itsmybike.cloud" . $path;
+    
+        $headers = [
+            "Accept: application/json"
+        ];
+    
+        $token = $this->ReadAttributeString("Token");
+        if ($token !== "") {
+            $headers[] = "Authorization: Token token=$token";
+        }
+    
+        $ch = curl_init($url);
+    
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST  => $method,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER         => false,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT        => 15
+        ]);
+    
+        if ($body !== null) {
+            $headers[] = "Content-Type: application/json";
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+        }
+    
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error    = curl_error($ch);
+    
+        curl_close($ch);
+    
+        if ($error) {
+            $this->LogMessage("IMB cURL error: $error", KL_ERROR);
+        }
+    
+        return [$httpCode, $response];
     }
+
 }
