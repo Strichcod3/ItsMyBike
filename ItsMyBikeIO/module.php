@@ -102,6 +102,8 @@ class ItsMyBikeIO extends IPSModule
         if (isset($data['user_token']['access_token'])) {
             $this->WriteAttributeString("Token", $data['user_token']['access_token']);
             $this->WriteAttributeString("AuthState", "AUTH_OK");
+
+             $this->GetDevices();
     
             // SMS-Code automatisch leeren (sehr wichtig!)
             IPS_SetProperty($this->InstanceID, "SMSCode", "");
@@ -234,38 +236,34 @@ class ItsMyBikeIO extends IPSModule
     }
 
 
-    public function GetDeviceOptions()
-    {
-        if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
-            return [];
-        }
-    
-        [$httpCode, $response] = $this->ApiRequest(
-            "GET",
-            "/api/phone/v2/device"
-        );
-    
-        if ($httpCode !== 200) {
-            return [];
-        }
-    
-        $devices = json_decode($response, true);
-        if (!is_array($devices)) {
-            return [];
-        }
-    
-        $options = [];
-        foreach ($devices as $device) {
-            if (isset($device['serialnumber'], $device['name'])) {
-                $options[] = [
-                    "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
-                    "value" => (string)$device['serialnumber']
-                ];
-            }
-        }
-    
-        return $options;
+public function GetDeviceOptions()
+{
+    if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
+        return [];
     }
+
+    $cache = json_decode(
+        $this->ReadAttributeString("DevicesCache"),
+        true
+    );
+
+    if (!is_array($cache)) {
+        return [];
+    }
+
+    $options = [];
+    foreach ($cache as $device) {
+        if (isset($device['serialnumber'], $device['name'])) {
+            $options[] = [
+                "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
+                "value" => (string)$device['serialnumber']
+            ];
+        }
+    }
+
+    return $options;
+}
+
 
 
 }
