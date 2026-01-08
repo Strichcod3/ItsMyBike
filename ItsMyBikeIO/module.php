@@ -104,6 +104,7 @@ class ItsMyBikeIO extends IPSModule
             $this->WriteAttributeString("AuthState", "AUTH_OK");
 
              $this->GetDevices();
+             $this->ReloadForm();
     
             // SMS-Code automatisch leeren (sehr wichtig!)
             IPS_SetProperty($this->InstanceID, "SMSCode", "");
