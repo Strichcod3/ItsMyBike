@@ -22,6 +22,7 @@ class ItsMyBikeDevice extends IPSModule
     public function GetConfigurationForm()
     {
         $options = [];
+        $current = $this->ReadPropertyString("SerialNumber");
     
         if ($this->HasActiveParent()) {
             $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
@@ -42,18 +43,29 @@ class ItsMyBikeDevice extends IPSModule
             }
         }
     
+        // Prüfen, ob aktueller Wert gültig ist
+        $valid = false;
+        foreach ($options as $opt) {
+            if ($opt['value'] === $current) {
+                $valid = true;
+                break;
+            }
+        }
+    
         return json_encode([
             "elements" => [
                 [
                     "type"    => "Select",
                     "name"    => "SerialNumber",
                     "caption" => "Tracker auswählen",
-                    "options" => $options
+                    "options" => $options,
+                    "value"   => $valid ? $current : null
                 ]
             ],
             "actions" => []
         ]);
     }
+
 
     public function ApplyChanges()
     {
