@@ -22,7 +22,11 @@ class ItsMyBikeDevice extends IPSModule
     public function GetConfigurationForm()
     {
         $options = [];
-        $current = $this->ReadPropertyString("SerialNumber");
+    
+        $options[] = [
+            "label" => "-- Tracker auswählen --",
+            "value" => ""
+        ];
     
         if ($this->HasActiveParent()) {
             $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
@@ -32,7 +36,7 @@ class ItsMyBikeDevice extends IPSModule
     
                 if (is_array($devices)) {
                     foreach ($devices as $device) {
-                        if (isset($device['serialnumber']) && isset($device['name'])) {
+                        if (isset($device['serialnumber'], $device['name'])) {
                             $options[] = [
                                 "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
                                 "value" => (string)$device['serialnumber']
@@ -43,28 +47,19 @@ class ItsMyBikeDevice extends IPSModule
             }
         }
     
-        // Prüfen, ob aktueller Wert gültig ist
-        $valid = false;
-        foreach ($options as $opt) {
-            if ($opt['value'] === $current) {
-                $valid = true;
-                break;
-            }
-        }
-    
         return json_encode([
             "elements" => [
                 [
                     "type"    => "Select",
                     "name"    => "SerialNumber",
                     "caption" => "Tracker auswählen",
-                    "options" => $options,
-                    "value"   => $valid ? $current : null
+                    "options" => $options
                 ]
             ],
             "actions" => []
         ]);
     }
+
 
 
     public function ApplyChanges()
