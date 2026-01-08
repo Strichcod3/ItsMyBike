@@ -27,7 +27,7 @@ class ItsMyBikeDevice extends IPSModule
     
         $ioID = $this->GetIOInstanceID();
         if ($ioID > 0) {
-            $devices = IPS_RequestAction($ioID, "GetDeviceOptions", null);
+            $devices = IPS_RequestAction($ioID, "GetDeviceOptions", 0);
             if (is_array($devices)) {
                 $trackerOptions = array_merge($trackerOptions, $devices);
             }
@@ -88,7 +88,7 @@ class ItsMyBikeDevice extends IPSModule
         }
     
         // Geräte vom IO holen
-        $devices = @IPS_RequestAction($ioID, "GetDevices", null);
+        $devices = @IPS_RequestAction($ioID, "GetDevices", 0);
         if (!is_array($devices)) {
             return;
         }
