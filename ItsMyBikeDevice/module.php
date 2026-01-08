@@ -21,34 +21,22 @@ class ItsMyBikeDevice extends IPSModule
     
     public function GetConfigurationForm()
     {
-        $options = [];
-    
-        // Leerer Default
-        $options[] = [
-            "label" => "-- Tracker auswählen --",
-            "value" => ""
+        $options = [
+            [
+                "label" => "-- Tracker auswählen --",
+                "value" => ""
+            ]
         ];
     
         // IO ermitteln
-        $instance = IPS_GetInstance($this->InstanceID);
-        $ioID = $instance['ConnectionID'];
+        $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
     
         if ($ioID > 0 && IPS_InstanceExists($ioID)) {
-            $cache = IPS_GetProperty($ioID, "DevicesCache");
-            if ($cache === "") {
-                $cache = IPS_GetInstance($ioID)['Attributes']['DevicesCache'] ?? "[]";
-            }
+            // 🔴 einzig erlaubter Weg
+            $ioOptions = @IPS_RequestAction($ioID, "GetDeviceOptions", null);
     
-            $devices = json_decode($cache, true);
-            if (is_array($devices)) {
-                foreach ($devices as $device) {
-                    if (isset($device['serialnumber'], $device['name'])) {
-                        $options[] = [
-                            "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
-                            "value" => (string)$device['serialnumber']
-                        ];
-                    }
-                }
+            if (is_array($ioOptions)) {
+                $options = array_merge($options, $ioOptions);
             }
         }
     
@@ -61,14 +49,10 @@ class ItsMyBikeDevice extends IPSModule
                     "options" => $options
                 ]
             ],
-            "actions" => [
-                [
-                    "type"  => "Label",
-                    "label" => "Hinweis: Falls leer, im IO einmal \"GetDevices\" auslösen"
-                ]
-            ]
+            "actions" => []
         ]);
     }
+
 
 
 
