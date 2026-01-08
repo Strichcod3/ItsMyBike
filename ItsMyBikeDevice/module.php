@@ -171,7 +171,7 @@ class ItsMyBikeDevice extends IPSModule
                 break;
     
             default:
-                throw new Exception("Invalid Action: $Ident");
+                return;
         }
     }
 
