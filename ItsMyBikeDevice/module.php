@@ -23,25 +23,24 @@ class ItsMyBikeDevice extends IPSModule
     {
         $options = [];
     
+        // Default-Auswahl (wichtig!)
         $options[] = [
             "label" => "-- Tracker auswählen --",
             "value" => ""
         ];
     
-        if ($this->HasActiveParent()) {
-            $ioID = IPS_GetInstance($this->InstanceID)['ConnectionID'];
+        $ioID = $this->GetParentID();
     
-            if ($ioID > 0) {
-                $devices = @IPS_RequestAction($ioID, "GetDevices", null);
+        if ($ioID > 0 && IPS_InstanceExists($ioID)) {
+            $devices = @IPS_RequestAction($ioID, "GetDevices", null);
     
-                if (is_array($devices)) {
-                    foreach ($devices as $device) {
-                        if (isset($device['serialnumber'], $device['name'])) {
-                            $options[] = [
-                                "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
-                                "value" => (string)$device['serialnumber']
-                            ];
-                        }
+            if (is_array($devices)) {
+                foreach ($devices as $device) {
+                    if (isset($device['serialnumber'], $device['name'])) {
+                        $options[] = [
+                            "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
+                            "value" => (string)$device['serialnumber']
+                        ];
                     }
                 }
             }
@@ -59,6 +58,7 @@ class ItsMyBikeDevice extends IPSModule
             "actions" => []
         ]);
     }
+
 
 
 
