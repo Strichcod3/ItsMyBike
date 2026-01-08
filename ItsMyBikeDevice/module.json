@@ -4,7 +4,6 @@
   "type": 3,
   "vendor": "IoT Venture / ItsMyBike",
   "aliases": ["ItsMyBike Tracker"],
-
   "parentRequirements": [
     "{D2B9F5A1-8A77-4C3C-9A4E-9A4B0F3C7E11}"
   ],
