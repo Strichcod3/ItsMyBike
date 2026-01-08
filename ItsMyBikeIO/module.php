@@ -252,4 +252,34 @@ class ItsMyBikeIO extends IPSModule
         return [$httpCode, $response];
     }
 
+    public function GetDevices()
+    {
+        // Nur liefern, wenn authentifiziert
+        if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
+            return null;
+        }
+    
+        [$httpCode, $response] = $this->ApiRequest(
+            "GET",
+            "/api/phone/v2/device"
+        );
+    
+        if ($httpCode !== 200) {
+            $this->LogMessage(
+                "IMB: GetDevices failed HTTP=$httpCode",
+                KL_WARNING
+            );
+            return null;
+        }
+    
+        $data = json_decode($response, true);
+    
+        if (!is_array($data)) {
+            return null;
+        }
+    
+        return $data;
+    }
+    
+
 }
