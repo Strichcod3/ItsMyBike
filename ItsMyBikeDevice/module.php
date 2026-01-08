@@ -23,13 +23,15 @@ class ItsMyBikeDevice extends IPSModule
     {
         $options = [];
     
-        // Default-Auswahl (wichtig!)
+        // Leere Default-Option (wichtig!)
         $options[] = [
             "label" => "-- Tracker auswählen --",
             "value" => ""
         ];
     
-        $ioID = $this->GetParentID();
+        // IO über ConnectionID ermitteln (einziger korrekter Weg)
+        $instance = IPS_GetInstance($this->InstanceID);
+        $ioID = $instance['ConnectionID'];
     
         if ($ioID > 0 && IPS_InstanceExists($ioID)) {
             $devices = @IPS_RequestAction($ioID, "GetDevices", null);
@@ -58,6 +60,7 @@ class ItsMyBikeDevice extends IPSModule
             "actions" => []
         ]);
     }
+
 
 
 
