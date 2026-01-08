@@ -215,7 +215,6 @@ class ItsMyBikeIO extends IPSModule
             return null;
         }
     
-        // 🔴 Cache aktualisieren
         $this->WriteAttributeString("DevicesCache", json_encode($data));
     
         return $data;
@@ -228,7 +227,44 @@ class ItsMyBikeIO extends IPSModule
         switch ($Ident) {
             case "GetDevices":
                 return $this->GetDevices();
+    
+            case "GetDeviceOptions":
+                return $this->GetDeviceOptions();
         }
+    }
+
+
+    public function GetDeviceOptions()
+    {
+        if ($this->ReadAttributeString("AuthState") !== "AUTH_OK") {
+            return [];
+        }
+    
+        [$httpCode, $response] = $this->ApiRequest(
+            "GET",
+            "/api/phone/v2/device"
+        );
+    
+        if ($httpCode !== 200) {
+            return [];
+        }
+    
+        $devices = json_decode($response, true);
+        if (!is_array($devices)) {
+            return [];
+        }
+    
+        $options = [];
+        foreach ($devices as $device) {
+            if (isset($device['serialnumber'], $device['name'])) {
+                $options[] = [
+                    "label" => $device['name'] . " (" . $device['serialnumber'] . ")",
+                    "value" => (string)$device['serialnumber']
+                ];
+            }
+        }
+    
+        return $options;
     }
 
 
