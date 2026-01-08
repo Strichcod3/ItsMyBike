@@ -33,6 +33,10 @@ class ItsMyBikeDevice extends IPSModule
 
     public function Update()
     {
+        $this->LogMessage(
+            "IMBD Update called, Serial=" . $this->ReadPropertyString("SerialNumber"),
+            KL_MESSAGE
+        );
         if (!$this->HasActiveParent()) {
             return;
         }
