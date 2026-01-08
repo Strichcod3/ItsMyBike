@@ -6,9 +6,10 @@
   "aliases": ["ItsMyBike Gateway"],
 
   "parentRequirements": [],
-  "childRequirements": [
-    "{6E6B1F8D-7A1A-4B0E-9E9C-3A9F7D9F5C01}"
+  "childRequirements": [],
+  "implemented": [
+    "{D2B9F5A1-8A77-4C3C-9A4E-9A4B0F3C7E11}"
   ],
-  "implemented": [],
   "prefix": "IMB"
 }
+
