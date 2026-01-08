@@ -161,7 +161,7 @@ class ItsMyBikeDevice extends IPSModule
         }
     }
 
-    public function ReloadFormAction(int $id)
+    public function ReloadFormAction($InstanceID, $Value)
     {
         $this->ReloadForm();
     }
