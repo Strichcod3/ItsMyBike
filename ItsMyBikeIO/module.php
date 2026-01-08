@@ -41,16 +41,19 @@ class ItsMyBikeIO extends IPSModule
 
 public function RequestSMSCode()
 {
+    $this->LogMessage("IMB: RequestSMSCode() called", KL_MESSAGE);
+
     $phone = trim($this->ReadPropertyString("Phone"));
     $brand = trim($this->ReadPropertyString("AppBrand"));
 
     if ($phone === "") {
         $this->WriteAttributeString("AuthState", "NO_PHONE");
+        $this->LogMessage("IMB: No phone number set", KL_WARNING);
         $this->ReloadForm();
         return;
     }
 
-    [$code, $resp] = $this->ApiRequest(
+    [$httpCode, $response] = $this->ApiRequest(
         "PUT",
         "/api/phone/v2/token/request_sms_code",
         [
@@ -61,14 +64,20 @@ public function RequestSMSCode()
         ]
     );
 
-    if ($code === 200) {
+    $this->LogMessage(
+        "IMB: SMS request HTTP=$httpCode RESPONSE=" . $response,
+        KL_MESSAGE
+    );
+
+    if ($httpCode === 200) {
         $this->WriteAttributeString("AuthState", "SMS_REQUESTED");
     } else {
-        $this->WriteAttributeString("AuthState", "ERROR ($code)");
+        $this->WriteAttributeString("AuthState", "ERROR_HTTP_$httpCode");
     }
 
     $this->ReloadForm();
 }
+
 
     
     private function CreateTokenFromSMS(string $smsCode)
