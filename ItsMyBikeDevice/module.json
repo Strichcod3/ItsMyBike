@@ -5,7 +5,9 @@
   "vendor": "IoT Venture / ItsMyBike",
   "aliases": ["ItsMyBike Tracker"],
   "url": "https://github.com/Strichcod3/ItsMyBike",
-  "parentRequirements": [],
+  "parentRequirements": [
+    "{F3C5E7A9-4D6B-4A8E-BE31-IMB000000001}"
+  ],
   "childRequirements": [],
   "implemented": [],
   "prefix": "IMBD"
